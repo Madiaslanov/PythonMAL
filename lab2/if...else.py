@@ -29,11 +29,11 @@ else:
  print("3")
  
 #5
-if a == b and c == d:
+if a == b and c==d:
  print("Hello")
  
 #6
-if a == b or c == d:
+if a == b or c==d:
   print("Hello")
   
 #7
