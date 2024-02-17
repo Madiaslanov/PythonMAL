@@ -1,24 +1,15 @@
-#1
-print(10 > 9)
+class Soda:
+    def __init__(self, ingredient=None):
+        if isinstance(ingredient, str):
+            self.ingredient = ingredient
+        else:
+            self.ingredient = None
+    
+    def show_my_drink(self):
+        if self.ingredient:
+            print(f'Газировка и {self.ingredient}')
+        else:
+            print('Обычная газировка')
+            
 
-True
-
-#2
-print(10 == 9)
-
-False
-
-#3
-print(10 < 9)
-
-False
-
-#4
-print(bool("abc"))
-
-True
-
-#5
-print(bool(0))
-
-False
+su = Soda()
