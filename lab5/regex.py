@@ -16,11 +16,12 @@ import re
 
 # print(founded)
 
-#3
+# #3
 # with open('reg_file.txt','r',encoding='utf-8') as file:
 #     g = file.read()
-
-# founded = re.findall(r'\w[а-я]+-\w[а-я]+',g)
+#     print(g)
+    
+# founded = re.findall(r'^((8|\+7)[\- ]?)?(\(?\d{3}\)?[\- ]?)?[\d\- ]{7,10}$',g)
 
 # print(founded)
 
@@ -40,13 +41,14 @@ import re
 
 # print(founded)
 
-# #6
+# # #6
 # with open('reg_file.txt','r',encoding='utf-8') as file:
-#     g = file.read()
+#    g = file.read()
+ 
+# sub = re.sub(r' ',',',g)
+# x = re.sub(r'\.',':',sub)
 
-# sub = re.sub(r' ',':.',g)
-
-# print(sub)
+# print(x)
 
 # #7
 # def tuie(zhylan):
