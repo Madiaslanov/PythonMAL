@@ -3,48 +3,68 @@ import random
 
 pygame.init()
 
-W, H = 1200, 800
-FPS = 60
+# Установка параметров окна игры
+W, H = 1200, 800  # Ширина и высота окна игры
+FPS = 60  # Количество кадров в секунду
 
+# Создание окна с заданными размерами
 screen = pygame.display.set_mode((W, H), pygame.RESIZABLE)
-clock = pygame.time.Clock()
-done = False
-bg = (0, 0, 0)
+clock = pygame.time.Clock()  # Создание объекта Clock для управления FPS
+done = False  # Переменная для отслеживания завершения игры
+bg = (0, 0, 0)  # Цвет фона
 
-# paddle
-paddleW = 150
-paddleH = 25
-paddleSpeed = 20
-paddle = pygame.Rect(W // 2 - paddleW // 2, H - paddleH - 30, paddleW, paddleH)
+# Параметры платформы
+paddleW = 150  # Ширина платформы
+paddleH = 25  # Высота платформы
+paddleSpeed = 20  # Скорость движения платформы
+paddle = pygame.Rect(W // 2 - paddleW // 2, H - paddleH - 30, paddleW, paddleH)  # Создание прямоугольника для платформы
 
-# Ball
-ballRadius = 20
-ballSpeed = 6
-ball_rect = int(ballRadius * 2 ** 0.5)
-ball = pygame.Rect(random.randrange(ball_rect, W - ball_rect), H // 2, ball_rect, ball_rect)
-dx, dy = 1, -1
+# Параметры мяча
+ballRadius = 20  # Радиус мяча
+ballSpeed = 6  # Скорость мяча
+ball_rect = int(ballRadius * 2 ** 0.5)  # Диаметр мяча (квадрат, в который вписан круг)
+ball = pygame.Rect(random.randrange(ball_rect, W - ball_rect), H // 2, ball_rect, ball_rect)  # Создание прямоугольника для мяча
+dx, dy = 1, -1  # Направление движения мяча
 
-# Game score
-game_score = 0
-game_score_fonts = pygame.font.SysFont('comicsansms', 40)
-game_score_text = game_score_fonts.render(f'Your game score is: {game_score}', True, (0, 0, 0))
-game_score_rect = game_score_text.get_rect()
-game_score_rect.center = (210, 20)
+# Счет игры
+game_score = 0  # Игровой счет
+game_score_fonts = pygame.font.SysFont('comicsansms', 40)  # Шрифт для отображения счета
+game_score_text = game_score_fonts.render(f'Ваш счет: {game_score}', True, (0, 0, 0))  # Текст для отображения счета
+game_score_rect = game_score_text.get_rect()  # Получение прямоугольника для позиционирования текста
+game_score_rect.center = (210, 20)  # Центрирование текста по горизонтали и вертикали
 
-# Catching sound
+# Звук при столкновении
 collision_sound = pygame.mixer.Sound('assets/catch.mp3')
 
-# Time variables
-time_elapsed = 0
-speed_increase_interval = 1000  # Increase speed every 1 seconds (in milliseconds)
-speed_increase_amount = 0.2  # Amount by which speed increases
-shrink_paddle_interval = 5000  # Shrink paddle every 5 seconds (in milliseconds)
-shrink_paddle_amount = 10
+# Переменные времени
+time_elapsed = 0  # Время, прошедшее с начала игры
+speed_increase_interval = 1000  # Интервал увеличения скорости мяча (в миллисекундах)
+speed_increase_amount = 0.2  # Величина увеличения скорости мяча
+shrink_paddle_interval = 5000  # Интервал уменьшения платформы (в миллисекундах)
+shrink_paddle_amount = 10  # Величина уменьшения платформы
 
-# Pause state
-is_paused = False
+# Состояние паузы
+is_paused = False  # Переменная для отслеживания состояния паузы
 
+# Экран окончания игры
+losefont = pygame.font.SysFont('comicsansms', 40)
+losetext = losefont.render('Игра окончена', True, (255, 255, 255))
+losetextRect = losetext.get_rect()
+losetextRect.center = (W // 2, H // 2)
 
+# Экран победы
+winfont = pygame.font.SysFont('comicsansms', 40)
+wintext = winfont.render('Вы победили!', True, (0, 0, 0))
+wintextRect = wintext.get_rect()
+wintextRect.center = (W // 2, H // 2)
+
+# Переменные для сообщений
+message_font = pygame.font.SysFont('comicsansms', 40)
+
+last_message = ""  # Последнее сообщение
+last_message_rect = None  # Прямоугольник для последнего сообщения
+
+# Функция обнаружения столкновения мяча с объектами
 def detect_collision(dx, dy, ball, rect):
     if dx > 0:
         delta_x = ball.right - rect.left
@@ -63,64 +83,46 @@ def detect_collision(dx, dy, ball, rect):
         dx = -dx
     return dx, dy
 
+# Настройки блоков
+block_list = [pygame.Rect(10 + 120 * i, 50 + 70 * j, 100, 50) for i in range(10) for j in range(4)]  # Создание списка блоков
+color_list = [(random.randrange(0, 255), random.randrange(0, 255), random.randrange(0, 255)) for i in range(10) for j in range(4)]  # Список случайных цветов для блоков
 
-# block settings
-block_list = [pygame.Rect(10 + 120 * i, 50 + 70 * j,
-                          100, 50) for i in range(10) for j in range(4)]
-color_list = [(random.randrange(0, 255),
-               random.randrange(0, 255), random.randrange(0, 255))
-              for i in range(10) for j in range(4)]
-
-# Randomly choose unbreakable blocks
+# Выбор случайных неразрушаемых блоков
 unbreakable_block_list = []
-for _ in range(5):  # Number of unbreakable blocks
+for _ in range(5):
     random_index = random.randint(0, len(block_list) - 1)
     unbreakable_block_list.append(block_list.pop(random_index))
 
 unbreakable_color_list = [(0, 0, 255) for _ in range(len(unbreakable_block_list))]
 
+# Типы бонусных кирпичей
 bonus_brick_types = {
-    "longer_paddle": {"color": (0, 255, 0), "perk": "paddle", "message": "Longer paddle!"},
-    "increase_speed": {"color": (255, 165, 0), "perk": "speed", "message": "Speed Up!"},
+    "longer_paddle": {"color": (0, 255, 0), "perk": "paddle", "message": "Длинная платформа!"},
+    "increase_speed": {"color": (255, 165, 0), "perk": "speed", "message": "Увеличение скорости!"},
 }
 
+# Создание бонусных кирпичей
 bonus_brick_list = []
-for _ in range(5):  # Number of bonus bricks
+for _ in range(5):
     random_index = random.randint(0, len(block_list) - 1)
     bonus_brick_type = random.choice(list(bonus_brick_types.keys()))
     bonus_brick_list.append((block_list.pop(random_index), bonus_brick_type))
 
-# Game over Screen
-losefont = pygame.font.SysFont('comicsansms', 40)
-losetext = losefont.render('Game Over', True, (255, 255, 255))
-losetextRect = losetext.get_rect()
-losetextRect.center = (W // 2, H // 2)
-
-# Win Screen
-winfont = pygame.font.SysFont('comicsansms', 40)
-wintext = winfont.render('You win yay', True, (0, 0, 0))
-wintextRect = wintext.get_rect()
-wintextRect.center = (W // 2, H // 2)
-
-# Message variables
-message_font = pygame.font.SysFont('comicsansms', 40)
-last_message = ""  # Stores the last message
-last_message_rect = None  # Stores the last message's rect
-
+# Основной игровой цикл
 while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_p:  # Toggle pause
+            if event.key == pygame.K_p:
                 is_paused = not is_paused
             if is_paused:
                 if event.key == pygame.K_w:
                     paddleW += 10
-                    paddle = pygame.Rect(paddle.left, paddle.top, paddleW, paddleH)  # Adjust paddle size
+                    paddle = pygame.Rect(paddle.left, paddle.top, paddleW, paddleH)
                 if event.key == pygame.K_s and paddleW > 10:
                     paddleW -= 10
-                    paddle = pygame.Rect(paddle.left, paddle.top, paddleW, paddleH)  # Adjust paddle size
+                    paddle = pygame.Rect(paddle.left, paddle.top, paddleW, paddleH)
                 if event.key == pygame.K_d:
                     ballRadius += 1
                 if event.key == pygame.K_a and ballRadius > 1:
@@ -128,12 +130,12 @@ while not done:
 
     if is_paused:
         screen.fill((100, 100, 100))
-        pause_text = game_score_fonts.render('Game Paused. Press P to resume.', True, (255, 255, 255))
+        pause_text = game_score_fonts.render('Игра приостановлена. Нажмите P, чтобы продолжить.', True, (255, 255, 255))
         settings_text_1 = game_score_fonts.render(
-            f'Paddle Width: {paddleW}, Ball Radius: {ballRadius}.', True,
+            f'Ширина платформы: {paddleW}, Радиус мяча: {ballRadius}.', True,
             (255, 255, 255))
         settings_text_2 = game_score_fonts.render(
-            'W/S: Adjust paddle. D/A: Adjust ball.', True,
+            'W/S: Изменить ширину платформы. D/A: Изменить радиус мяча.', True,
             (255, 255, 255))
 
         screen.blit(pause_text, (W / 2 - pause_text.get_width() / 2, H / 2 - pause_text.get_height() / 2 - 20))
@@ -145,8 +147,8 @@ while not done:
 
     screen.fill(bg)
 
-    [pygame.draw.rect(screen, color_list[color], block) for color, block in enumerate(block_list)]  # drawing blocks
-    [pygame.draw.rect(screen, (0, 0, 255), block) for block in unbreakable_block_list]  # drawing unbreakable blocks
+    [pygame.draw.rect(screen, color_list[color], block) for color, block in enumerate(block_list)]
+    [pygame.draw.rect(screen, (0, 0, 255), block) for block in unbreakable_block_list]
 
     pygame.draw.rect(screen, pygame.Color(255, 255, 255), paddle)
     pygame.draw.circle(screen, pygame.Color(255, 0, 0), ball.center, ballRadius)
@@ -170,7 +172,6 @@ while not done:
         game_score += 1
         collision_sound.play()
 
-    # Check collision with unbreakable blocks
     for i, unbreakable_block in enumerate(unbreakable_block_list):
         if ball.colliderect(unbreakable_block):
             dx, dy = detect_collision(dx, dy, ball, unbreakable_block)
@@ -178,27 +179,22 @@ while not done:
     for block, bonus_type in bonus_brick_list:
         pygame.draw.rect(screen, bonus_brick_types[bonus_type]["color"], block)
 
-    # Collision detection for bonus bricks
     for i, (bonus_brick, bonus_type) in enumerate(bonus_brick_list):
         if ball.colliderect(bonus_brick):
-            # Apply perk of the bonus brick
             if bonus_brick_types[bonus_type]["perk"] == "speed":
-                ballSpeed += 2  # Example increase in speed
+                ballSpeed += 2
 
-            # Update last message
             last_message = bonus_brick_types[bonus_type]["message"]
             last_message_surface = message_font.render(last_message, True, (255, 255, 255))
-            last_message_rect = last_message_surface.get_rect(topright=(W - 10, -10))  # Adjust position
+            last_message_rect = last_message_surface.get_rect(topright=(W - 10, -10))
 
-            # Remove the bonus brick from the list
             del bonus_brick_list[i]
             break
 
-    # Display last message
     if last_message:
         screen.blit(last_message_surface, last_message_rect)
 
-    game_score_text = game_score_fonts.render(f'Your game score is: {game_score}', True, (255, 255, 255))
+    game_score_text = game_score_fonts.render(f'Ваш счет: {game_score}', True, (255, 255, 255))
     screen.blit(game_score_text, game_score_rect)
 
     if ball.bottom > H:
@@ -210,16 +206,14 @@ while not done:
         pygame.display.flip()
         continue
 
-    # Increase ball speed over time
     time_elapsed += clock.get_rawtime()
     if time_elapsed >= speed_increase_interval:
         ballSpeed += speed_increase_amount
         time_elapsed = 0
 
-    # Shrink paddle over time
     if time_elapsed >= shrink_paddle_interval:
         paddleW -= shrink_paddle_amount
-        if paddleW < 50:  # Limit the minimum width of the paddle
+        if paddleW < 50:
             paddleW = 50
         paddle.width = paddleW
         time_elapsed = 0

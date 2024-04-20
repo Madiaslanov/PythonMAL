@@ -23,12 +23,13 @@ SCORE = 0
 COIN_SCORE = 0
 TOTAL_SCORE = 0
 
+# Шрифты и изображения
 font = pygame.font.SysFont("Verdana", 60)
 font_small = pygame.font.SysFont("Verdana", 20)
 game_over = font.render("Game Over", True, BLACK)
-
 background = pygame.image.load("assets/AnimatedStreet.png")
 
+# Создание окна
 DISPLAYSURF = pygame.display.set_mode((400, 600))
 pygame.display.set_caption("Game")
 
@@ -58,11 +59,7 @@ class Player(pygame.sprite.Sprite):
 
     def move(self):
         pressed_keys = pygame.key.get_pressed()
-        # if pressed_keys[K_UP]:
-        # self.rect.move_ip(0, -5)
-        # if pressed_keys[K_DOWN]:
-        # self.rect.move_ip(0,5)
-
+        # Движение игрока влево и вправо
         if self.rect.left > 0:
             if pressed_keys[K_LEFT]:
                 self.rect.move_ip(-5, 0)
@@ -71,6 +68,7 @@ class Player(pygame.sprite.Sprite):
                 self.rect.move_ip(5, 0)
 
     def collect_coin(self, coins):
+        # Проверка на сбор монеты
         collisions = pygame.sprite.spritecollide(self, coins, True)
         for coin in collisions:
             return True
@@ -80,7 +78,8 @@ class Player(pygame.sprite.Sprite):
 class Coin(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.image.load("assets/coin-svgrepo-com.svg")
+        original_image = pygame.image.load("assets/ffa.png")
+        self.image = pygame.transform.scale(original_image, (40, 40))  # Указываете желаемую ширину и высоту
         self.rect = self.image.get_rect()
         self.rect.center = (random.randint(40, SCREEN_WIDTH - 40), 0)
 
@@ -91,12 +90,12 @@ class Coin(pygame.sprite.Sprite):
             self.rect.center = (random.randint(40, SCREEN_WIDTH - 40), 0)
 
 
-# Setting up Sprites
+# Настройка спрайтов
 P1 = Player()
 E1 = Enemy()
 C1 = Coin()
 
-# Creating Sprites Groups
+# Создание групп спрайтов
 enemies = pygame.sprite.Group()
 enemies.add(E1)
 coins = pygame.sprite.Group()
@@ -106,14 +105,14 @@ all_sprites.add(P1)
 all_sprites.add(E1)
 all_sprites.add(C1)
 
-# Adding a new User event
+# Добавление нового пользовательского события
 INC_SPEED = pygame.USEREVENT + 1
 pygame.time.set_timer(INC_SPEED, 1000)
 
-# Game Loop
+# Главный игровой цикл
 while True:
 
-    # Cycles through all events occurring
+    # Обработка всех событий
     for event in pygame.event.get():
         if event.type == INC_SPEED:
             SPEED += 0.5
@@ -121,6 +120,7 @@ while True:
             pygame.quit()
             sys.exit()
 
+    # Отображение заднего фона и счетов на экране
     DISPLAYSURF.blit(background, (0, 0))
     scores = font_small.render(str(SCORE), True, BLACK)
     coin_scores = font_small.render(str(COIN_SCORE), True, BLACK)
@@ -129,26 +129,26 @@ while True:
     DISPLAYSURF.blit(coin_scores, (360, 10))
     DISPLAYSURF.blit(total_scores, (360, 30))
 
-    # Moves and Re-draws all Sprites
+    # Перемещение и перерисовка всех спрайтов
     for entity in all_sprites:
         DISPLAYSURF.blit(entity.image, entity.rect)
         entity.move()
 
     total_score = random.randint(0, 10)
 
-    # Check for coin collection
+    # Проверка сбора монет
     if P1.collect_coin(coins):
-        # if player reach 100 points then speed of the game increase on 1.0
+        # Увеличение скорости игры после достижения 100 очков
         if TOTAL_SCORE == 100:
             SPEED += 1.0
         COIN_SCORE += 1
-        # Total score increase on random points
+        # Увеличение общего счета на случайное количество очков
         TOTAL_SCORE += total_score
         new_coin = Coin()
         coins.add(new_coin)
         all_sprites.add(new_coin)
 
-    # To be run if collision occurs between Player and Enemy
+    # Обработка столкновений игрока с врагом
     if pygame.sprite.spritecollideany(P1, enemies):
         pygame.mixer.Sound('assets/crash.wav').play()
         time.sleep(0.5)
